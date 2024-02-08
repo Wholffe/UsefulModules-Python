@@ -1,56 +1,62 @@
 import os
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
 
-###Settings###
-path = r"A:\your\path"
-url = ""
-min_image_width = 600
-min_image_height = 600
+### Settings ###
+path = r"D:\Downloads\ScriptDownload"  # Directory to save the images
+url = ""  # URL of the website to download images from
+min_image_width = 600  # Minimum image width
+min_image_height = 600  # Minimum image height
 
-###Script###
-def makeHomeUrl(url:str):
-    https = "https://"
-    home_url = url.removeprefix(https).split("/", 1)[0]
-    return https + home_url
+### Script ###
+def make_absolute_url(base_url, url):
+    return urljoin(base_url, url)
 
-def download_image(url:str, filename:str):
+def download_image(url, filename):
     try: 
         response = requests.get(url)
         if response.status_code == 200:
             with open(filename, "wb") as f:
                 f.write(response.content)
-                print(f"Picture '{filename}' downloaded.")
+                print(f"Image '{filename}' downloaded.")
         else:
-            print(f"Error downloading from '{url}', statuscode: {response.status_code}")
+            print(f"Error downloading from '{url}', status code: {response.status_code}")
     except Exception as e:
         print(f"Error downloading from '{url}': {e}")
 
-def remove_suffix_if_present(filename:str, suffix:str):
+def remove_suffix_if_present(filename, suffix):
     if filename.endswith(suffix):
         return filename[:-len(suffix)]
     return filename
 
-def main(path:str, url:str, min_image_width:int,min_image_height:int):
+def main(url, path, min_image_width, min_image_height):
     if not os.path.exists(path):
-        print('Error: Path does not exist')
-        return
+        os.makedirs(path)
+        print(f"Directory '{path}' created.")
 
     try:
         response = requests.get(url)
+        response.raise_for_status()
     except Exception as e:
-        print(e)
+        print(f"Error fetching website '{url}': {e}")
         return
-    soup = BeautifulSoup(response.text, "html.parser")
+    
+    base_url = response.url
+    soup = BeautifulSoup(response.content, "html.parser")
     img_tags = soup.find_all("img")
 
     for img in img_tags:
-        img_url = img["src"]
-        if not img_url.startswith(("http:", "https:")):
-            img_url = makeHomeUrl(url) + img_url
-            
-        response = requests.head(img_url)
-        if response.status_code != 200:
+        img_url = img.get("src")
+        if not img_url:
+            continue
+        img_url = make_absolute_url(base_url, img_url)
+
+        try:
+            response = requests.head(img_url)
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Error checking image URL '{img_url}': {e}")
             continue
 
         headers = response.headers
@@ -64,20 +70,9 @@ def main(path:str, url:str, min_image_width:int,min_image_height:int):
             if not (width >= min_image_width and height >= min_image_height):
                 continue
 
-        linked_img_url = None
-        for link_tag in img.find_parents("a"):
-            linked_img_url = link_tag.get("href")
-            if linked_img_url and linked_img_url.lower().endswith((".png", ".jpg", ".jpeg")):
-                break
-
-        if linked_img_url:
-            linked_filename = os.path.join(path, linked_img_url.split("/")[-1])
-            linked_filename = remove_suffix_if_present(linked_filename, "_")
-            download_image(linked_img_url, linked_filename)
-        else:
-            filename = os.path.join(path, img_url.split("/")[-1])
+            filename = os.path.join(path, os.path.basename(urlparse(img_url).path))
             filename = remove_suffix_if_present(filename, "_")
             download_image(img_url, filename)
 
 if __name__ == "__main__":
-    main(path, url, min_image_width, min_image_height)
+    main(url, path, min_image_width, min_image_height)
