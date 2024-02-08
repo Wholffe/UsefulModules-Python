@@ -6,8 +6,6 @@ from urllib.parse import urljoin, urlparse
 ### Settings ###
 path = r"D:\Downloads\imageDownloader"  # Directory to save the images
 url = ""  # URL of the website to download images from
-min_image_width = 600  # Minimum image width in px
-min_image_height = 600  # Minimum image height in px
 
 ### Script ###
 def download_image(url, filename):
@@ -30,7 +28,7 @@ def remove_suffix_if_present(filename, suffix):
         return filename[:-len(suffix)]
     return filename
 
-def main(url, path, min_image_width, min_image_height):
+def main(url, path):
     if not os.path.exists(path):
         os.makedirs(path)
         print(f"Directory '{path}' created.")
@@ -57,4 +55,4 @@ def main(url, path, min_image_width, min_image_height):
         download_image(img_url, filename)
 
 if __name__ == "__main__":
-    main(url, path, min_image_width, min_image_height)
+    main(url, path)
