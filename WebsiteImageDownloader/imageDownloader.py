@@ -4,15 +4,12 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
 ### Settings ###
-path = r"D:\Downloads\ScriptDownload"  # Directory to save the images
+path = r"D:\Downloads\imageDownloader"  # Directory to save the images
 url = ""  # URL of the website to download images from
-min_image_width = 600  # Minimum image width
-min_image_height = 600  # Minimum image height
+min_image_width = 600  # Minimum image width in px
+min_image_height = 600  # Minimum image height in px
 
 ### Script ###
-def make_absolute_url(base_url, url):
-    return urljoin(base_url, url)
-
 def download_image(url, filename):
     try: 
         response = requests.get(url)
@@ -24,6 +21,9 @@ def download_image(url, filename):
             print(f"Error downloading from '{url}', status code: {response.status_code}")
     except Exception as e:
         print(f"Error downloading from '{url}': {e}")
+
+def make_absolute_url(base_url, url):
+    return urljoin(base_url, url)
 
 def remove_suffix_if_present(filename, suffix):
     if filename.endswith(suffix):
@@ -52,27 +52,9 @@ def main(url, path, min_image_width, min_image_height):
             continue
         img_url = make_absolute_url(base_url, img_url)
 
-        try:
-            response = requests.head(img_url)
-            response.raise_for_status()
-        except Exception as e:
-            print(f"Error checking image URL '{img_url}': {e}")
-            continue
-
-        headers = response.headers
-        content_length = int(headers.get("content-length", 0))
-        content_type = headers.get("content-type", "")
-
-        if content_length > 0 and "image" in content_type:
-            width = int(headers.get("x-image-width", 0))
-            height = int(headers.get("x-image-height", 0))
-            
-            if not (width >= min_image_width and height >= min_image_height):
-                continue
-
-            filename = os.path.join(path, os.path.basename(urlparse(img_url).path))
-            filename = remove_suffix_if_present(filename, "_")
-            download_image(img_url, filename)
+        filename = os.path.join(path, os.path.basename(urlparse(img_url).path))
+        filename = remove_suffix_if_present(filename, "_")
+        download_image(img_url, filename)
 
 if __name__ == "__main__":
     main(url, path, min_image_width, min_image_height)
