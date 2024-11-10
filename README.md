@@ -21,9 +21,6 @@ This repository contains a collection of useful Python modules for various tasks
 * qrFileReader – Read all qr Codes from a file/path and print it as a text
 * qrScanner – Scan a qr Code with you camera
 
-### 6. `youtube`
-* download youtube videos as mp3 files
-
 ## How to Use
 
 Certain folders within the project contain README files with detailed information specific to their contents. Explore these folders for more details
